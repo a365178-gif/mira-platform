@@ -1,0 +1,12 @@
+node_modules/
+**/.env*
+!**/.env.example
+.next/
+.expo/
+.supabase/
+supabase/.temp/
+dist/
+coverage/
+*.tsbuildinfo
+.vercel
+.env*

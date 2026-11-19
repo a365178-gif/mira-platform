@@ -1,0 +1,13 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "moduleSuffixes": [".native", ".ios", ".android", ""]
+  },
+  "include": [
+    "App.tsx",
+    "../../packages/design-tokens/src/**/*.ts",
+    "../../packages/ui/src/**/*.ts",
+    "../../packages/ui/src/**/*.tsx"
+  ]
+}

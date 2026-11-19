@@ -1,0 +1,75 @@
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { Logo } from '@mira/ui';
+import { createSupabaseServerClient } from '../../../lib/supabase/server';
+import { getSupabasePublicConfig } from '../../../lib/supabase/config';
+import { MemberProfileForm, type MemberProfileInitial } from '../MemberProfileForm';
+import styles from '../member.module.css';
+
+export const dynamic = 'force-dynamic';
+
+export default async function MemberProfilePage() {
+  const configured = Boolean(getSupabasePublicConfig());
+  const supabase = await createSupabaseServerClient();
+
+  if (!configured || !supabase) {
+    return (
+      <main className={styles.page}><div className={styles.shell}>
+        <header className={styles.header}><Link href="/" aria-label="返回 MIRA 首頁"><Logo size={48} variant="horizontal" /></Link><Link className={styles.backLink} href="/">返回首頁</Link></header>
+        <p className={styles.notice} role="status"><strong>會員服務尚未連接</strong><br />目前沒有 Supabase 專案設定，無法讀取或建立會員資料。</p>
+      </div></main>
+    );
+  }
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+
+  const [profileResult, detailsResult, accessResult] = await Promise.all([
+    supabase.from('profiles').select('id, display_name, bio, avatar_storage_path').eq('id', user.id).maybeSingle(),
+    supabase.from('member_private_details').select('gender, interested_in, intention').eq('user_id', user.id).maybeSingle(),
+    supabase.rpc('current_user_can_explore'),
+  ]);
+
+  if (profileResult.error || detailsResult.error || accessResult.error || !profileResult.data || !detailsResult.data) {
+    return (
+      <main className={styles.page}><div className={styles.shell}>
+        <header className={styles.header}><Link href="/" aria-label="返回 MIRA 首頁"><Logo size={48} variant="horizontal" /></Link><Link className={styles.backLink} href="/">返回首頁</Link></header>
+        <p className={styles.notice} role="alert"><strong>會員資料暫時無法讀取</strong><br />請確認 Supabase migration 已套用且資料表 RLS 設定正確，再重新登入。</p>
+      </div></main>
+    );
+  }
+
+  let avatarUrl: string | null = null;
+  if (profileResult.data.avatar_storage_path) {
+    const { data } = await supabase.storage.from('member-avatars')
+      .createSignedUrl(profileResult.data.avatar_storage_path, 300);
+    avatarUrl = data?.signedUrl ?? null;
+  }
+
+  const initial: MemberProfileInitial = {
+    userId: user.id,
+    email: user.email ?? '',
+    nickname: profileResult.data.display_name ?? '',
+    bio: profileResult.data.bio ?? '',
+    gender: detailsResult.data.gender ?? '',
+    interestedIn: detailsResult.data.interested_in ?? '',
+    intention: detailsResult.data.intention ?? '',
+    avatarPath: profileResult.data.avatar_storage_path,
+    avatarUrl,
+    canExplore: accessResult.data === true,
+  };
+
+  return (
+    <main className={styles.page}>
+      <div className={styles.shell}>
+        <header className={styles.header}><Link href="/" aria-label="返回 MIRA 首頁"><Logo size={48} variant="horizontal" /></Link><Link className={styles.backLink} href="/">回到首頁</Link></header>
+        <section className={styles.intro}>
+          <p className={styles.eyebrow}>MIRA｜覓然 · 會員中心</p>
+          <h1 className={styles.title}>個人資料</h1>
+          <p className={styles.description}>只讀取你自己的會員資料。電子郵件與生日不會出現在公開個人介紹中。</p>
+        </section>
+        <MemberProfileForm initial={initial} />
+      </div>
+    </main>
+  );
+}

@@ -1,0 +1,13 @@
+{
+  "name": "@mira/design-tokens",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./colors.css": "./src/colors.css"
+  }
+}

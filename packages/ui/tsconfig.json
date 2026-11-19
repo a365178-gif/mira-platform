@@ -1,0 +1,7 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "moduleSuffixes": [".native", ".ios", ".android", ""]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}
