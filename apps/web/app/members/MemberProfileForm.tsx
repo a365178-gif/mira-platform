@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type FormEvent, type ChangeEvent } from 'react';
+import Link from 'next/link';
 import { createSupabaseBrowserClient } from '../../lib/supabase/client';
 import styles from './member.module.css';
 
@@ -176,6 +177,7 @@ export function MemberProfileForm({ initial }: { initial: MemberProfileInitial }
           ? '目前帳號已通過資料庫成年資格與啟用檢查。'
           : '帳號資料不代表成年驗證已完成。完成可信任的成年驗證並經授權啟用前，配對探索功能不會開放。'}
       </p>
+      {initial.canExplore ? <p><Link className={styles.exploreLink} href="/explore">前往探索</Link></p> : null}
     </>
   );
 }

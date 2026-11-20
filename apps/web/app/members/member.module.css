@@ -10,6 +10,10 @@
 .notice { margin: 0 0 20px; padding: 14px 16px; border: 1px solid rgb(184 155 255 / 30%); border-radius: 12px; background: rgb(106 60 207 / 12%); color: var(--mira-text-primary); font-size: 13px; line-height: 1.7; }
 .notice strong { color: var(--mira-star-purple); }
 .card { display: grid; gap: 20px; padding: clamp(20px, 4vw, 34px); border: 1px solid rgb(184 155 255 / 18%); border-radius: 20px; background: var(--mira-card-background); }
+.candidateList { display: grid; gap: 16px; }
+.candidateCard { display: grid; gap: 12px; padding: 22px; border: 1px solid rgb(184 155 255 / 18%); border-radius: 18px; background: var(--mira-card-background); }
+.candidateCard .sectionTitle, .candidateCard .description { margin: 0; }
+.exploreActions { display: grid; justify-items: start; gap: 8px; }
 .field { display: grid; gap: 8px; }
 .label { color: var(--mira-text-primary); font-size: 13px; font-weight: 600; }
 .input, .select, .textarea { width: 100%; min-height: 48px; padding: 11px 14px; border: 1px solid rgb(184 155 255 / 32%); border-radius: 11px; background: var(--mira-midnight-black); color: var(--mira-text-primary); font: inherit; }
@@ -23,6 +27,7 @@
 .submit:hover:not(:disabled) { filter: brightness(1.08); }
 .submit:disabled { cursor: not-allowed; opacity: .55; }
 .inlineLink { color: var(--mira-star-purple); text-underline-offset: 3px; }
+.exploreLink { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; padding: 0 22px; border: 1px solid var(--mira-deep-purple); border-radius: 999px; background: linear-gradient(110deg, var(--mira-deep-purple), var(--mira-dream-pink)); color: var(--mira-text-primary); font-weight: 650; text-decoration: none; }
 .feedback { margin: 0; color: var(--mira-dream-pink); font-size: 13px; line-height: 1.6; }
 .success { margin: 0; color: var(--mira-star-purple); font-size: 13px; line-height: 1.6; }
 .passwordHint { display: flex; justify-content: space-between; gap: 10px; color: var(--mira-text-secondary); font-size: 11px; }
