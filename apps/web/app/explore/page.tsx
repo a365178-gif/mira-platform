@@ -30,11 +30,19 @@ export default async function ExplorePage() {
     .select('id, display_name, bio, city, interests')
     .eq('status', 'active').neq('id', user.id).limit(24);
 
+  if (error) {
+    console.error('[explore] Candidate profile query failed', {
+      code: error.code,
+      message: error.message,
+      hint: error.hint,
+    });
+  }
+
   return (
     <main className={styles.page}><div className={styles.shell}>
       <header className={styles.header}><Link href="/" aria-label="返回 MIRA 首頁"><Logo size={48} variant="horizontal" /></Link><Link className={styles.backLink} href="/members/me">會員中心</Link></header>
       <section className={styles.intro}><p className={styles.eyebrow}>MIRA｜覓然 · 探索</p><h1 className={styles.title}>慢一點，遇見多一點。</h1><p className={styles.description}>僅顯示符合探索資格且已啟用的會員資料。</p></section>
-      {error ? <p className={styles.notice} role="alert"><strong>會員資料暫時無法載入</strong><br />請確認資料庫 migration 與 RLS 設定後再試。</p> : candidates?.length ? <div className={styles.candidateList}>
+      {error ? <p className={styles.notice} role="alert"><strong>會員資料暫時無法載入</strong><br />請確認資料庫 migrations 已全部套用及 RLS 設定正確後再試。（錯誤代碼：{error.code || '未知'}）</p> : candidates?.length ? <div className={styles.candidateList}>
         {candidates.map((candidate) => <article className={styles.candidateCard} key={candidate.id}>
           <h2 className={styles.sectionTitle}>{candidate.display_name || 'MIRA 會員'}</h2>
           {candidate.city ? <p className={styles.help}>{candidate.city}</p> : null}

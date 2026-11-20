@@ -74,7 +74,7 @@ in a `NEXT_PUBLIC_*` variable.
 
 The local Supabase config requires email confirmation. For hosted projects,
 enable email confirmation, set the Auth password minimum to 12 characters, and
-add the deployed `/auth/callback` URL to the Auth redirect allow list. Apply both migrations
+add the deployed `/auth/callback` URL to the Auth redirect allow list. Apply all migrations
 before testing sign-up and member profile updates. Registration checks the
 entered birthday in the browser and does not send or persist it. This check is
 not a trusted age verification: profiles remain in `draft` until an authorized
