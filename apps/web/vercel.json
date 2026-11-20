@@ -1,4 +1,4 @@
 {
-  "installCommand": "pnpm --dir ../.. install --no-frozen-lockfile",
-  "buildCommand": "pnpm --filter ./apps/web build"
+  "installCommand": "pnpm --dir ../.. install",
+  "buildCommand": "pnpm build"
 }
