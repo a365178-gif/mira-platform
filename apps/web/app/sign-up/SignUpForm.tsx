@@ -2,7 +2,8 @@
 
 import { useState, type FormEvent } from 'react';
 import { createSupabaseBrowserClient } from '../../lib/supabase/client';
-import { buildRegistrationMetadata, latestAdultBirthDate, validateRegistration } from '../../lib/members/registration';
+import { BirthDateSelect } from '../components/BirthDateSelect';
+import { buildRegistrationMetadata, validateRegistration } from '../../lib/members/registration';
 import styles from '../members/member.module.css';
 
 interface SignUpFormProps { configured: boolean }
@@ -71,9 +72,9 @@ export function SignUpForm({ configured }: SignUpFormProps) {
         <input autoComplete="new-password" className={styles.input} disabled={!configured || busy} id="signup-password" minLength={12} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
         <p className={styles.help}>至少 12 個字元。密碼會由 Supabase Auth 處理，不會寫入會員資料表。</p>
       </div>
-      <div className={styles.field}>
-        <label className={styles.label} htmlFor="birth-date">出生年月日</label>
-        <input autoComplete="bday" className={styles.input} disabled={!configured || busy} id="birth-date" max={latestAdultBirthDate()} onChange={(event) => setDateOfBirth(event.target.value)} required type="date" value={dateOfBirth} />
+      <div aria-labelledby="signup-birthday-label" className={styles.field} role="group">
+        <p className={styles.label} id="signup-birthday-label">出生年月日</p>
+        <BirthDateSelect disabled={!configured || busy} idPrefix="signup-birthday" onChange={setDateOfBirth} value={dateOfBirth} />
         <p className={styles.help}>只在此頁確認年齡，不會傳送至 Supabase 或保存為會員資料。</p>
       </div>
       <div className={styles.fieldGrid}>

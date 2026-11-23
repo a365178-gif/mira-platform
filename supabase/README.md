@@ -87,6 +87,13 @@ match is active:
    `list_exploration_candidates()` and `list_user_matches()` return only the
    fields needed by their pages.
 
+`20261123020000_stabilize_current_member_profile_rpc.sql` backfills missing
+`member_private_details` rows for existing profiles and extends
+`get_current_member_profile()` to return the signed-in member's profile and
+private preferences in one owner-scoped response. The Web member page treats
+exploration eligibility as a separate status check, so an eligibility RPC
+failure does not prevent basic profile data from loading.
+
 The current stage-one and stage-two prompt pools contain five questions each.
 Profile details revealed by the room are the member's existing interests,
 routine, bio, private dating intention, and private avatar. Members can edit

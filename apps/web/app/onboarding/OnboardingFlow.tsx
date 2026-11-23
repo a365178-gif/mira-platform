@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card, Logo } from '@mira/ui';
 import { DEMO_PROFILE_KEY, isAtLeast18, type DemoProfile } from '../../lib/demo-profile';
+import { BirthDateSelect } from '../components/BirthDateSelect';
 import styles from '../flow.module.css';
 
 const isLocalDemoMode = !(
@@ -20,26 +21,13 @@ export function OnboardingFlow() {
   const router = useRouter();
   const [today, setToday] = useState('');
   const [nickname, setNickname] = useState('');
-  const [birthYear, setBirthYear] = useState('');
-  const [birthMonth, setBirthMonth] = useState('');
-  const [birthDay, setBirthDay] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
   const [gender, setGender] = useState('');
   const [interestedIn, setInterestedIn] = useState('');
   const [intention, setIntention] = useState('');
   const [safetyCommitment, setSafetyCommitment] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitError, setSubmitError] = useState('');
-  const currentYear = today ? Number(today.slice(0, 4)) : new Date().getFullYear();
-  const years = Array.from({ length: currentYear - 1950 + 1 }, (_, index) => currentYear - index);
-  const months = Array.from({ length: 12 }, (_, index) => index + 1);
-  const daysInMonth = birthYear && birthMonth
-    ? new Date(Number(birthYear), Number(birthMonth), 0).getDate()
-    : 31;
-  const days = Array.from({ length: daysInMonth }, (_, index) => index + 1);
-  const dateOfBirth = birthYear && birthMonth && birthDay
-    ? `${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
-    : '';
-
   useEffect(() => {
     const now = new Date();
     const localDate = [
@@ -100,22 +88,6 @@ export function OnboardingFlow() {
     router.replace('/explore');
   }
 
-  function handleBirthYearChange(value: string) {
-    setBirthYear(value);
-    if (value && birthMonth && birthDay) {
-      const maxDay = new Date(Number(value), Number(birthMonth), 0).getDate();
-      if (Number(birthDay) > maxDay) setBirthDay('');
-    }
-  }
-
-  function handleBirthMonthChange(value: string) {
-    setBirthMonth(value);
-    if (birthYear && value && birthDay) {
-      const maxDay = new Date(Number(birthYear), Number(value), 0).getDate();
-      if (Number(birthDay) > maxDay) setBirthDay('');
-    }
-  }
-
   return (
     <main className={styles.page}>
       <div className={styles.shell}>
@@ -166,53 +138,14 @@ export function OnboardingFlow() {
               {errors.nickname ? <p className={styles.error} role="alert">{errors.nickname}</p> : null}
             </div>
 
-            <fieldset className={`${styles.field} ${styles.birthDateField}`}>
-              <legend className={styles.label}>
-                出生年月日
-              </legend>
-              <div className={styles.birthDateSelects}>
-                <select
-                  aria-label="出生年份"
-                  className={styles.select}
-                  disabled={!isLocalDemoMode}
-                  id="birthYear"
-                  onChange={(event) => handleBirthYearChange(event.target.value)}
-                  required
-                  value={birthYear}
-                >
-                  <option value="">年份</option>
-                  {years.map((year) => <option key={year} value={year}>{year} 年</option>)}
-                </select>
-                <select
-                  aria-label="出生月份"
-                  className={styles.select}
-                  disabled={!isLocalDemoMode}
-                  id="birthMonth"
-                  onChange={(event) => handleBirthMonthChange(event.target.value)}
-                  required
-                  value={birthMonth}
-                >
-                  <option value="">月份</option>
-                  {months.map((month) => <option key={month} value={month}>{month} 月</option>)}
-                </select>
-                <select
-                  aria-label="出生日期"
-                  className={styles.select}
-                  disabled={!isLocalDemoMode}
-                  id="birthDay"
-                  onChange={(event) => setBirthDay(event.target.value)}
-                  required
-                  value={birthDay}
-                >
-                  <option value="">日期</option>
-                  {days.map((day) => <option key={day} value={day}>{day} 日</option>)}
-                </select>
-              </div>
+            <div aria-labelledby="onboarding-birthday-label" className={styles.field} role="group">
+              <p className={styles.label} id="onboarding-birthday-label">出生年月日</p>
+              <BirthDateSelect disabled={!isLocalDemoMode} idPrefix="onboarding-birthday" onChange={setDateOfBirth} value={dateOfBirth} />
               <p className={styles.help}>僅用來計算是否年滿 18 歲，不會寫入本機示範資料。</p>
               {errors.dateOfBirth ? (
                 <p className={styles.error} role="alert">{errors.dateOfBirth}</p>
               ) : null}
-            </fieldset>
+            </div>
 
             <div className={styles.fieldGrid}>
               <div className={styles.field}>

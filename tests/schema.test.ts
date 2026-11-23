@@ -98,6 +98,12 @@ describe('MIRA Supabase schema migration', () => {
         'utf8',
       ),
     );
+    await database.exec(
+      readFileSync(
+        new URL('../supabase/migrations/20261123020000_stabilize_current_member_profile_rpc.sql', import.meta.url),
+        'utf8',
+      ),
+    );
   });
 
   afterAll(async () => {
@@ -369,6 +375,17 @@ describe('MIRA Supabase schema migration', () => {
       [privateUserA],
     );
     expect(ownDetails.rows[0]).toMatchObject({ gender: '女性', interested_in: '男性' });
+
+    const ownProfile = await asUser<{ profile: Record<string, unknown> }>(
+      privateUserA,
+      'select public.get_current_member_profile() as profile',
+    );
+    expect(ownProfile.rows[0].profile).toMatchObject({
+      displayName: '嘉禾',
+      gender: '女性',
+      interestedIn: '男性',
+      intention: '認真交往',
+    });
 
     const otherDetails = await asUser<{ user_id: string }>(
       privateUserA,

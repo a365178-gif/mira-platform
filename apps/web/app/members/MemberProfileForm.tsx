@@ -17,7 +17,8 @@ export interface MemberProfileInitial {
   intention: string;
   avatarPath: string | null;
   avatarUrl: string | null;
-  canExplore: boolean;
+  canExplore: boolean | null;
+  accessError: string | null;
 }
 
 export function MemberProfileForm({ initial }: { initial: MemberProfileInitial }) {
@@ -191,12 +192,15 @@ export function MemberProfileForm({ initial }: { initial: MemberProfileInitial }
         </div>
       </form>
       <p className={styles.notice} role="status">
-        <strong>{initial.canExplore ? '成年驗證已完成' : '正式會員服務尚未啟用'}</strong><br />
-        {initial.canExplore
+        <strong>{initial.canExplore === true ? '成年驗證已完成' : initial.canExplore === false ? '正式會員服務尚未啟用' : '探索資格暫時無法確認'}</strong><br />
+        {initial.canExplore === true
           ? '目前帳號已通過資料庫成年資格與啟用檢查。'
-          : '帳號資料不代表成年驗證已完成。完成可信任的成年驗證並經授權啟用前，配對探索功能不會開放。'}
+          : initial.canExplore === false
+            ? '帳號資料不代表成年驗證已完成。完成可信任的成年驗證並經授權啟用前，配對探索功能不會開放。'
+            : '會員資料已載入；目前無法確認成年驗證與探索啟用狀態。'}
       </p>
-      {initial.canExplore ? <p><Link className={styles.exploreLink} href="/explore">前往探索</Link></p> : null}
+      {initial.accessError ? <p className={styles.help}>Supabase qualification error.message：<code>{initial.accessError}</code></p> : null}
+      {initial.canExplore === true ? <p><Link className={styles.exploreLink} href="/explore">前往探索</Link></p> : null}
     </>
   );
 }

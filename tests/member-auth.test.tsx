@@ -11,7 +11,7 @@ describe('MIRA member auth pages without Supabase configuration', () => {
 
     expect(screen.getByRole('status').textContent).toContain('不會送出或保存資料');
     expect(screen.getByRole('button', { name: '建立會員帳號' }).hasAttribute('disabled')).toBe(true);
-    expect(screen.getByLabelText('出生年月日').hasAttribute('disabled')).toBe(true);
+    expect(screen.getByLabelText('出生年份').hasAttribute('disabled')).toBe(true);
   });
 
   it('keeps login disabled until a Supabase project is configured', () => {

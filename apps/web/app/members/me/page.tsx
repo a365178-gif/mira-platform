@@ -24,17 +24,18 @@ export default async function MemberProfilePage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const [profileResult, detailsResult, accessResult] = await Promise.all([
+  const [profileResult, accessResult] = await Promise.all([
     supabase.rpc('get_current_member_profile'),
-    supabase.from('member_private_details').select('gender, interested_in, intention').eq('user_id', user.id).maybeSingle(),
     supabase.rpc('current_user_can_explore'),
   ]);
 
-  if (profileResult.error || detailsResult.error || accessResult.error || !profileResult.data || !detailsResult.data) {
+  if (profileResult.error || !profileResult.data) {
+    const profileReadError = profileResult.error?.message ?? 'get_current_member_profile() returned no profile row.';
     return (
       <main className={styles.page}><div className={styles.shell}>
         <header className={styles.header}><Link href="/" aria-label="返回 MIRA 首頁"><Logo size={48} variant="horizontal" /></Link><Link className={styles.backLink} href="/">返回首頁</Link></header>
-        <p className={styles.notice} role="alert"><strong>會員資料暫時無法讀取</strong><br />請確認 Supabase migration 已套用且資料表 RLS 設定正確，再重新登入。</p>
+        <p className={styles.notice} role="alert"><strong>會員資料暫時無法讀取</strong><br />請確認會員資料 RPC 與相關 migrations 已套用。</p>
+        <p className={styles.help}>Supabase error.message：<code>{profileReadError}</code></p>
       </div></main>
     );
   }
@@ -46,6 +47,9 @@ export default async function MemberProfilePage() {
     interests: string[];
     routine: string | null;
     avatarStoragePath: string | null;
+    gender: string | null;
+    interestedIn: string | null;
+    intention: string | null;
   };
   if (profile.avatarStoragePath) {
     const { data } = await supabase.storage.from('member-avatars')
@@ -60,12 +64,13 @@ export default async function MemberProfilePage() {
     bio: profile.bio ?? '',
     interests: profile.interests ?? [],
     routine: profile.routine ?? '',
-    gender: detailsResult.data.gender ?? '',
-    interestedIn: detailsResult.data.interested_in ?? '',
-    intention: detailsResult.data.intention ?? '',
+    gender: profile.gender ?? '',
+    interestedIn: profile.interestedIn ?? '',
+    intention: profile.intention ?? '',
     avatarPath: profile.avatarStoragePath,
     avatarUrl,
-    canExplore: accessResult.data === true,
+    canExplore: accessResult.error ? null : accessResult.data === true,
+    accessError: accessResult.error?.message ?? null,
   };
 
   return (
