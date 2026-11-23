@@ -19,6 +19,7 @@ export interface MemberProfileInitial {
   avatarUrl: string | null;
   canExplore: boolean | null;
   accessError: string | null;
+  testAgeVerificationEnabled: boolean;
 }
 
 export function MemberProfileForm({ initial }: { initial: MemberProfileInitial }) {
@@ -33,6 +34,8 @@ export function MemberProfileForm({ initial }: { initial: MemberProfileInitial }
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [canExplore, setCanExplore] = useState(initial.canExplore);
+  const [adultConfirmed, setAdultConfirmed] = useState(false);
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,6 +48,10 @@ export function MemberProfileForm({ initial }: { initial: MemberProfileInitial }
     const interestList = [...new Set(interests.split(/[、,，]/).map((item) => item.trim()).filter(Boolean))];
     if (interestList.length > 10) { setError('興趣標籤最多 10 個。'); return; }
     if (routine.trim().length > 240) { setError('生活作息說明不可超過 240 個字。'); return; }
+    if (initial.testAgeVerificationEnabled && canExplore !== true && !adultConfirmed) {
+      setError('請先勾選已年滿 18 歲，才能使用本機測試啟用。');
+      return;
+    }
     const supabase = createSupabaseBrowserClient();
     if (!supabase) { setError('Supabase 尚未設定，資料沒有送出。'); return; }
 
@@ -66,9 +73,23 @@ export function MemberProfileForm({ initial }: { initial: MemberProfileInitial }
       interested_in: interestedIn,
       intention,
     }).eq('user_id', initial.userId);
-    setBusy(false);
-    if (privateResult.error) { setError('交友偏好更新失敗，請重新載入後確認資料。'); return; }
+    if (privateResult.error) { setBusy(false); setError('交友偏好更新失敗，請重新載入後確認資料。'); return; }
+    if (initial.testAgeVerificationEnabled && canExplore !== true) {
+      const activation = await fetch('/api/test-activate-adult', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ adultConfirmed }),
+      });
+      if (!activation.ok) {
+        const result = await activation.json().catch(() => null) as { error?: string } | null;
+        setBusy(false);
+        setError(`個人資料已儲存，但本機測試啟用失敗：${result?.error ?? '請確認伺服器設定後重試。'}`);
+        return;
+      }
+      setCanExplore(true);
+      setAdultConfirmed(false);
+    }
     setMessage('個人資料已更新。電子郵件與生日不會公開；生日也不會保存。');
+    setBusy(false);
   }
 
   async function uploadAvatar(event: ChangeEvent<HTMLInputElement>) {
@@ -184,6 +205,12 @@ export function MemberProfileForm({ initial }: { initial: MemberProfileInitial }
           </select>
         </div>
         <p className={styles.help}>生日不會保存。正式探索服務僅對完成可信任成年驗證並啟用的帳號開放。</p>
+        {initial.testAgeVerificationEnabled && canExplore !== true ? (
+          <label className={styles.checkLabel}>
+            <input checked={adultConfirmed} disabled={busy} onChange={(event) => setAdultConfirmed(event.target.checked)} type="checkbox" />
+            <span>本機測試確認：我已年滿 18 歲。這是測試自我聲明，不是正式成年驗證。</span>
+          </label>
+        ) : null}
         {error ? <p className={styles.feedback} role="alert">{error}</p> : null}
         {message ? <p className={styles.success} role="status">{message}</p> : null}
         <div className={styles.formActions}>
@@ -192,15 +219,15 @@ export function MemberProfileForm({ initial }: { initial: MemberProfileInitial }
         </div>
       </form>
       <p className={styles.notice} role="status">
-        <strong>{initial.canExplore === true ? '成年驗證已完成' : initial.canExplore === false ? '正式會員服務尚未啟用' : '探索資格暫時無法確認'}</strong><br />
-        {initial.canExplore === true
-          ? '目前帳號已通過資料庫成年資格與啟用檢查。'
+        <strong>{canExplore === true ? (initial.testAgeVerificationEnabled ? '本機測試會員已啟用' : '成年驗證已完成') : canExplore === false ? '正式會員服務尚未啟用' : '探索資格暫時無法確認'}</strong><br />
+        {canExplore === true
+          ? (initial.testAgeVerificationEnabled ? '資料庫已標記 self_attested_test 並啟用探索測試；這不代表正式成年驗證。' : '目前帳號已通過資料庫成年資格與啟用檢查。')
           : initial.canExplore === false
             ? '帳號資料不代表成年驗證已完成。完成可信任的成年驗證並經授權啟用前，配對探索功能不會開放。'
             : '會員資料已載入；目前無法確認成年驗證與探索啟用狀態。'}
       </p>
       {initial.accessError ? <p className={styles.help}>Supabase qualification error.message：<code>{initial.accessError}</code></p> : null}
-      {initial.canExplore === true ? <p><Link className={styles.exploreLink} href="/explore">前往探索</Link></p> : null}
+      {canExplore === true ? <p><Link className={styles.exploreLink} href="/explore">前往探索</Link></p> : null}
     </>
   );
 }

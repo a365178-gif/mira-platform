@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function MemberProfilePage() {
   const configured = Boolean(getSupabasePublicConfig());
+  const testAgeVerificationEnabled = process.env.NODE_ENV === 'development' && process.env.MIRA_TEST_MODE === 'true';
   const supabase = await createSupabaseServerClient();
 
   if (!configured || !supabase) {
@@ -71,6 +72,7 @@ export default async function MemberProfilePage() {
     avatarUrl,
     canExplore: accessResult.error ? null : accessResult.data === true,
     accessError: accessResult.error?.message ?? null,
+    testAgeVerificationEnabled,
   };
 
   return (

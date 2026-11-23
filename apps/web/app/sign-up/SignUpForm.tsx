@@ -6,9 +6,9 @@ import { BirthDateSelect } from '../components/BirthDateSelect';
 import { buildRegistrationMetadata, validateRegistration } from '../../lib/members/registration';
 import styles from '../members/member.module.css';
 
-interface SignUpFormProps { configured: boolean }
+interface SignUpFormProps { configured: boolean; testAgeVerificationEnabled: boolean }
 
-export function SignUpForm({ configured }: SignUpFormProps) {
+export function SignUpForm({ configured, testAgeVerificationEnabled }: SignUpFormProps) {
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -46,10 +46,26 @@ export function SignUpForm({ configured }: SignUpFormProps) {
 
     if (signUpError) { setError('註冊未完成，請確認資料後再試。'); return; }
     if (data.session) {
+      if (testAgeVerificationEnabled) {
+        const activation = await fetch('/api/test-activate-adult', {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ adultConfirmed: true }),
+        });
+        if (!activation.ok) {
+          const result = await activation.json().catch(() => null) as { error?: string } | null;
+          setError(`帳號已建立，但測試成年啟用失敗：${result?.error ?? '請到會員中心重試。'}`);
+          setBusy(false);
+          return;
+        }
+        window.location.assign('/explore');
+        return;
+      }
       window.location.assign('/members/me');
       return;
     }
-    setMessage('註冊資料已送交 Supabase Auth。請至信箱完成確認；完成後仍須通過可信任的成年驗證，才能使用探索服務。');
+    setMessage(testAgeVerificationEnabled
+      ? '註冊資料已送交 Supabase Auth。請先至信箱完成確認，再到會員中心勾選測試成年聲明並儲存，以啟用本機探索測試。'
+      : '註冊資料已送交 Supabase Auth。請至信箱完成確認；完成後仍須通過可信任的成年驗證，才能使用探索服務。');
   }
 
   return (
@@ -57,7 +73,7 @@ export function SignUpForm({ configured }: SignUpFormProps) {
       {!configured ? (
         <p className={styles.notice} role="status"><strong>尚未連接正式服務</strong><br />目前沒有 Supabase 專案 URL 與公開金鑰設定。表單停用中，不會送出或保存資料。</p>
       ) : (
-        <p className={styles.notice} role="status"><strong>成年資格提醒</strong><br />生日只在本頁檢查是否年滿 18 歲，不會送出或保存。帳號建立後仍須完成可信任的成年驗證，才能啟用會員功能。</p>
+        <p className={styles.notice} role="status"><strong>{testAgeVerificationEnabled ? '本機成年驗證測試' : '成年資格提醒'}</strong><br />生日只在本頁檢查是否年滿 18 歲，不會送出或保存。{testAgeVerificationEnabled ? '測試模式的自我聲明會在服務端標記為 self_attested_test，僅供本機開發探索測試，不是正式成年驗證。' : '帳號建立後仍須完成可信任的成年驗證，才能啟用會員功能。'}</p>
       )}
       <div className={styles.field}>
         <label className={styles.label} htmlFor="nickname">暱稱</label>
@@ -99,7 +115,7 @@ export function SignUpForm({ configured }: SignUpFormProps) {
       </div>
       <label className={styles.checkLabel}>
         <input checked={adultCommitment} disabled={!configured || busy} onChange={(event) => setAdultCommitment(event.target.checked)} type="checkbox" />
-        <span>我確認已年滿 18 歲，並了解正式會員功能須通過可信任的成年驗證。</span>
+        <span>{testAgeVerificationEnabled ? '我確認已年滿 18 歲，並同意以本機測試自我聲明啟用測試會員。' : '我確認已年滿 18 歲，並了解正式會員功能須通過可信任的成年驗證。'}</span>
       </label>
       {error ? <p className={styles.feedback} role="alert">{error}</p> : null}
       {message ? <p className={styles.success} role="status">{message}</p> : null}

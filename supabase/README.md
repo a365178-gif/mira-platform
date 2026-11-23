@@ -46,6 +46,16 @@ verification writes and profile activation are server-owned. Discovery RPCs
 require an active, verified adult profile. Never expose a Supabase `service_role`
 key to an app client.
 
+### Local development activation test
+
+The `self_attested_test` method and `test_activate_adult_member` RPC exist only
+to exercise discovery flows against a development Supabase project. The Next.js
+route additionally requires `NODE_ENV=development`, `MIRA_TEST_MODE=true`, an
+authenticated same-origin request, and a server-only `SUPABASE_SERVICE_ROLE_KEY`.
+It activates only the signed-in user and stores no date of birth. This is not a
+trusted age verification and must never be enabled in production. Keep the
+service role key only in the server's uncommitted `.env.local` file.
+
 ## Three-stage exploration
 
 The initial, agreed flow is:

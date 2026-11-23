@@ -7,6 +7,7 @@ import { SignUpForm } from './SignUpForm';
 export const dynamic = 'force-dynamic';
 
 export default function SignUpPage() {
+  const testAgeVerificationEnabled = process.env.NODE_ENV === 'development' && process.env.MIRA_TEST_MODE === 'true';
   return (
     <main className={styles.page}>
       <div className={styles.shell}>
@@ -16,7 +17,7 @@ export default function SignUpPage() {
           <h1 className={styles.title}>為相遇，準備一個開始。</h1>
           <p className={styles.description}>建立帳號並設定交友偏好。生日只用於本頁年齡檢查，不會保存。</p>
         </section>
-        <SignUpForm configured={Boolean(getSupabasePublicConfig())} />
+        <SignUpForm configured={Boolean(getSupabasePublicConfig())} testAgeVerificationEnabled={testAgeVerificationEnabled} />
       </div>
     </main>
   );

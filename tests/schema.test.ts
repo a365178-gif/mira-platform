@@ -15,6 +15,7 @@ const unverifiedUser = '00000000-0000-4000-8000-000000000003';
 const privateUserA = '00000000-0000-4000-8000-000000000004';
 const privateUserB = '00000000-0000-4000-8000-000000000005';
 const legacyUser = '00000000-0000-4000-8000-000000000006';
+const testActivationUser = '00000000-0000-4000-8000-000000000007';
 
 let database: PGlite;
 
@@ -52,6 +53,13 @@ describe('MIRA Supabase schema migration', () => {
       stable
       as $$
         select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid;
+      $$;
+      create function auth.role()
+      returns text
+      language sql
+      stable
+      as $$
+        select nullif(current_setting('request.jwt.claim.role', true), '');
       $$;
       create table storage.buckets (
         id text primary key,
@@ -101,6 +109,18 @@ describe('MIRA Supabase schema migration', () => {
     await database.exec(
       readFileSync(
         new URL('../supabase/migrations/20261123020000_stabilize_current_member_profile_rpc.sql', import.meta.url),
+        'utf8',
+      ),
+    );
+    await database.exec(
+      readFileSync(
+        new URL('../supabase/migrations/20261123030000_add_test_self_attested_verification_method.sql', import.meta.url),
+        'utf8',
+      ),
+    );
+    await database.exec(
+      readFileSync(
+        new URL('../supabase/migrations/20261123040000_test_only_adult_activation_rpc.sql', import.meta.url),
         'utf8',
       ),
     );
@@ -352,6 +372,35 @@ describe('MIRA Supabase schema migration', () => {
     expect(verificationColumns.rows.map(({ column_name }) => column_name)).not.toContain(
       'identity_document_path',
     );
+  });
+
+  it('allows only the server service role to activate the explicitly test-only verification', async () => {
+    await database.query('insert into auth.users (id) values ($1)', [testActivationUser]);
+
+    await expect(
+      asUser(testActivationUser, "select public.test_activate_adult_member($1)", [testActivationUser]),
+    ).rejects.toThrow();
+
+    await database.exec('set role service_role');
+    await database.query("select set_config('request.jwt.claim.role', 'service_role', false)");
+    try {
+      const activated = await database.query<{ result: { verified: boolean; active: boolean; test_only: boolean } }>(
+        'select public.test_activate_adult_member($1) as result', [testActivationUser],
+      );
+      expect(activated.rows[0].result).toEqual({ verified: true, active: true, test_only: true });
+    } finally {
+      await database.exec('reset role');
+      await database.query("select set_config('request.jwt.claim.role', '', false)");
+    }
+
+    const state = await database.query<{ status: string; method: string; verified: boolean }>(
+      `select profile.status, verification.method,
+              private.is_verified_adult(profile.id) as verified
+       from public.profiles profile
+       join public.age_verifications verification on verification.user_id = profile.id
+       where profile.id = $1`, [testActivationUser],
+    );
+    expect(state.rows[0]).toMatchObject({ status: 'active', method: 'self_attested_test', verified: true });
   });
 
   it('keeps member preferences private and avatar storage owner-scoped', async () => {
