@@ -9,20 +9,23 @@
 - **平台：** iOS、Android、Web。
 - **視覺方向：** 深色、高級、浪漫、帶有克制的科技感。
 
-Web 提供本機示範的 18+ 門檻與探索大廳導覽，也包含 Supabase Auth 會員頁面基礎。會員頁面只有在 Supabase 專案設定完成後才會啟用；可信任的成年驗證仍須另外接通，否則帳號不能啟用正式探索服務。
+Web 的探索頁會從 Supabase 查詢已啟用且通過有效成年驗證的會員，並透過資料庫 RPC 記錄有興趣／略過及雙向配對。正式探索仍要求可信任的成年驗證結果與已啟用 profile；驗證 provider／人工審核流程需由部署者設定。
 
 ## Web 本機示範流程
 
-- 首頁「開始探索」會進入基本資料與 18+ 門檻表單；出生年月日只在當下用於年齡計算，不會保存。
-- 若未設定完整的 `NEXT_PUBLIC_SUPABASE_URL` 與 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`（或舊版 `NEXT_PUBLIC_SUPABASE_ANON_KEY`），表單以本機示範模式運作，資料只存於當前分頁的 `sessionStorage`。
-- 三階探索大廳提供四位虛構示意對象與本機互動：第一階以氣場卡及三題價值觀計算示意契合度；第二階展示興趣、生活文字及無真實音訊的播放器，並接受本機破冰回覆；第三階展示插畫頭像與示意聊天室。這些操作不連接真實對象或服務，聊天室訊息只存在頁面記憶體。
-- 各頁均明確標示「非正式驗證／非真實配對」，不宣稱產生真實候選人、推薦或互動。若已偵測 Supabase 設定但尚未實作正式整合，註冊表單會停用，不收集真實資料。
+- `/onboarding` 保留本機 18+ 門檻表單；出生年月日只在當下用於年齡計算，不會保存。首頁的「開始探索」會進入正式探索頁。
+- 本機 onboarding 示範只在未設定 Supabase URL 與 Publishable Key（或舊版 anon key）時運作，資料只存於當前分頁的 `sessionStorage`。
+- 本機 onboarding 不會建立 Supabase 帳號、驗證成年資格或產生探索資格。正式探索請使用會員帳號登入。
+- `/explore` 不使用本機示範對象。候選人依資料庫 RLS 顯示，排除登入者本人、已送出探索回應及已配對對象；互相有興趣時由 RPC 建立配對。
+- `/matches/[matchId]` 使用三階共鳴房間；階段答案由資料庫鎖定，雙方提交後才互相揭曉，並依序解鎖興趣／作息、深度自介／關係期待與頭像／留言。
 
 ## 會員系統基礎
 
 - `/sign-up` 與 `/login` 使用 Supabase Auth 電子郵件／密碼流程；未設定專案 URL 與公開金鑰時，表單會停用且不送出資料。
 - `/members/me` 以登入者身分讀取本人資料。電子郵件保留在 Supabase Auth，不複製到公開資料表。
 - 註冊頁只在瀏覽器當下檢查生日是否滿 18 歲，不傳送或保存生日。這不是可信任的成年驗證；新 profile 維持 `draft`，直到授權驗證流程確認成年並啟用。
+- 探索頁使用 `current_user_can_explore()` 檢查登入者資格，並呼叫 `start_exploration` 與 `record_exploration_response`；已配對紀錄由 `matches` 資料表讀取。
+- 共鳴房間使用 `get_match_room_state()`、`submit_match_stage_answer()` 與 `submit_micro_date_choices()`；答案 RLS、頭像 Storage 與留言政策都要求有效會員資格及階段解鎖。
 - 性別與交友偏好存於僅本人可讀寫的 `member_private_details`。頭像放在 private `member-avatars` bucket，採擁有者 RLS 與 5 MB 圖片限制。
 - 正式上線前仍須設定 Supabase Auth email confirmation，並實作可信任成年驗證的 provider callback 或人工審核流程。不可把 service-role key 放入瀏覽器。
 
@@ -91,4 +94,4 @@ Logo 核心由兩道斜向幾何環交錯而成，象徵兩個不同的人。紫
 - `packages/design-tokens`：品牌色彩、間距、圓角與字體尺度。
 - `packages/ui`：跨平台 Logo、Button、Card、Input 與設計系統預覽首頁。
 - `tests`：共用 tokens 與 UI 元件測試。
-- Supabase 核心 Schema 已建立；Web 尚未接通帳號建立、可信任成年驗證、候選探索、推薦或配對服務。本機示範不可冒充正式功能。
+- Web Auth、候選探索、雙向配對與三階共鳴房間已接通 Supabase。可信任成年驗證 provider／人工審核、每日推薦、配對後即時推播，以及原生 App 端的探索流程仍未完成。本機 onboarding 示範不可冒充正式資格或配對。

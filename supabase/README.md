@@ -59,9 +59,40 @@ The initial, agreed flow is:
    creates one `matches` row. A `pass` closes that exploration as `passed`.
 
 The row lock on the session serializes concurrent responses. Clients cannot
-write sessions, responses, or matches directly; they use the RPCs. Messaging,
-ranking/recommendation algorithms, blocking/reporting, and rematch policy are
+write sessions, responses, or matches directly; they use the RPCs. Ranking and
+recommendation algorithms, blocking/reporting, and rematch policy are
 intentionally outside this schema phase.
+
+## Match resonance rooms
+
+`20261123010000_create_match_resonance_rooms.sql` adds the room flow after a
+match is active:
+
+1. `get_match_room_state(match_id)` creates or reads a room and returns one
+   stage-one and one stage-two prompt. Stage-one answers unlock two puzzle
+   pieces only after both participants submit; stage-two answers unlock the
+   third piece under the same rule.
+2. `submit_match_stage_answer(match_id, answer)` stores one locked JSONB answer
+   per participant and stage. RLS allows a participant to read their own
+   answer immediately; the other answer stays hidden until both rows exist.
+3. `submit_micro_date_choices(match_id, choices)` accepts exactly three of the
+   seeded low-pressure activities per participant. The final piece and room
+   messages unlock only after both submit. The client receives only the shared
+   choices, not the other participant's private selection list.
+4. `match_room_messages` allows participants to read and insert messages only
+   after all four pieces are unlocked. Avatar Storage reads follow the same
+   gate. The migration adds `match_room_messages` to the `supabase_realtime`
+   publication when that publication exists. `get_current_member_profile()`
+   keeps private profile columns readable to the owner, while
+   `list_exploration_candidates()` and `list_user_matches()` return only the
+   fields needed by their pages.
+
+The current stage-one and stage-two prompt pools contain five questions each.
+Profile details revealed by the room are the member's existing interests,
+routine, bio, private dating intention, and private avatar. Members can edit
+interests and routine in `/members/me`. The current schema does not implement
+preference-based candidate filtering. The room uses database-backed messages
+and Supabase Realtime subscriptions after the final puzzle is unlocked.
 
 ## Web member account setup
 

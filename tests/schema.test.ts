@@ -86,6 +86,18 @@ describe('MIRA Supabase schema migration', () => {
         'utf8',
       ),
     );
+    await database.exec(
+      readFileSync(
+        new URL('../supabase/migrations/20261118030000_grant_profile_status_for_discovery.sql', import.meta.url),
+        'utf8',
+      ),
+    );
+    await database.exec(
+      readFileSync(
+        new URL('../supabase/migrations/20261123010000_create_match_resonance_rooms.sql', import.meta.url),
+        'utf8',
+      ),
+    );
   });
 
   afterAll(async () => {
@@ -147,6 +159,9 @@ describe('MIRA Supabase schema migration', () => {
     await database.query(
       `update public.profiles
        set display_name = case id when $1 then 'Mira A' else 'Mira B' end,
+           bio = case id when $1 then '喜歡雨天散步' else '最近喜歡咖啡和書店' end,
+           interests = case id when $1 then array['登山','咖啡'] else array['閱讀','散步'] end,
+           routine = case id when $1 then '平日早起' else '週末慢慢吃早餐' end,
            status = 'active'
        where id in ($1, $2)`,
       [userA, userB],
@@ -157,6 +172,8 @@ describe('MIRA Supabase schema migration', () => {
       'select id from public.profiles order by id',
     );
     expect(discoverableProfiles.rows.map(({ id }) => id)).toEqual([userA, userB]);
+    await expect(asUser(userA, 'select bio from public.profiles where id = $1', [userB]))
+      .rejects.toThrow('permission denied for table profiles');
 
     await expect(
       asUser(unverifiedUser, 'select public.start_exploration($1)', [userB]),
@@ -202,6 +219,109 @@ describe('MIRA Supabase schema migration', () => {
       [sessionId],
     );
     expect(matches.rows[0].count).toBe(1);
+
+    const roomStart = await asUser<{ state: Record<string, unknown> }>(
+      userA,
+      'select public.get_match_room_state((select id from public.matches where exploration_session_id = $1)) as state',
+      [sessionId],
+    );
+    expect(roomStart.rows[0].state).toMatchObject({ currentStage: 1, unlockedPuzzles: 0 });
+    const matchId = await database.query<{ id: string }>(
+      'select id from public.matches where exploration_session_id = $1',
+      [sessionId],
+    );
+    const activeMatchId = matchId.rows[0].id;
+    await database.query(
+      `insert into storage.objects (id, bucket_id, name, owner_id)
+       values ('20000000-0000-4000-8000-000000000001', 'member-avatars', $1, $2)`,
+      [`${userB}/avatar`, userB],
+    );
+    const hiddenAvatar = await asUser<{ id: string }>(
+      userA,
+      'select id from storage.objects where name = $1',
+      [`${userB}/avatar`],
+    );
+    expect(hiddenAvatar.rows).toHaveLength(0);
+    await expect(asUser(userA, "insert into public.match_room_messages (match_id, user_id, body) values ($1, $2, '太早的留言')", [activeMatchId, userA]))
+      .rejects.toThrow();
+
+    await asUser(
+      userA,
+      "select public.submit_match_stage_answer($1, '{\"choice\":\"a\",\"supplement\":\"喜歡雨天散步\"}'::jsonb)",
+      [activeMatchId],
+    );
+    const hiddenPartnerAnswer = await asUser<{ user_id: string }>(
+      userB,
+      'select user_id from public.match_stage_answers where match_id = $1',
+      [activeMatchId],
+    );
+    expect(hiddenPartnerAnswer.rows).toHaveLength(0);
+    const onePuzzleState = await asUser<{ state: Record<string, unknown> }>(
+      userA,
+      'select public.get_match_room_state($1) as state',
+      [activeMatchId],
+    );
+    expect(onePuzzleState.rows[0].state).toMatchObject({ currentStage: 1, unlockedPuzzles: 0 });
+
+    await asUser(
+      userB,
+      "select public.submit_match_stage_answer($1, '{\"choice\":\"b\",\"supplement\":\"也喜歡雨天\"}'::jsonb)",
+      [activeMatchId],
+    );
+    const revealedAnswers = await asUser<{ user_id: string }>(
+      userA,
+      'select user_id from public.match_stage_answers where match_id = $1 and stage = 1',
+      [activeMatchId],
+    );
+    expect(revealedAnswers.rows).toHaveLength(2);
+    const stageTwoState = await asUser<{ state: Record<string, unknown> }>(
+      userA,
+      'select public.get_match_room_state($1) as state',
+      [activeMatchId],
+    );
+    expect(stageTwoState.rows[0].state).toMatchObject({ currentStage: 2, unlockedPuzzles: 2 });
+    expect(stageTwoState.rows[0].state).toMatchObject({
+      opponent: { interests: ['閱讀', '散步'], routine: '週末慢慢吃早餐', deepBio: null },
+    });
+
+    await asUser(userA, "select public.submit_match_stage_answer($1, '{\"answer\":\"最近常聽的歌\"}'::jsonb)", [activeMatchId]);
+    await asUser(userB, "select public.submit_match_stage_answer($1, '{\"answer\":\"今天心情很好\"}'::jsonb)", [activeMatchId]);
+    const stageThreeState = await asUser<{ state: Record<string, unknown> }>(
+      userA,
+      'select public.get_match_room_state($1) as state',
+      [activeMatchId],
+    );
+    expect(stageThreeState.rows[0].state).toMatchObject({ currentStage: 3, unlockedPuzzles: 3 });
+    expect(stageThreeState.rows[0].state).toMatchObject({
+      opponent: { deepBio: '最近喜歡咖啡和書店', relationshipExpectations: null },
+    });
+
+    await asUser(userA, "select public.submit_micro_date_choices($1, array['散步逛街區','咖啡店聊天','逛書店選書'])", [activeMatchId]);
+    await asUser(userB, "select public.submit_micro_date_choices($1, array['咖啡店聊天','逛書店選書','公園野餐'])", [activeMatchId]);
+    const completedRoom = await asUser<{ state: Record<string, unknown> }>(
+      userA,
+      'select public.get_match_room_state($1) as state',
+      [activeMatchId],
+    );
+    expect(completedRoom.rows[0].state).toMatchObject({
+      currentStage: 3,
+      unlockedPuzzles: 4,
+      dateConsensus: ['咖啡店聊天', '逛書店選書'],
+    });
+    const revealedAvatar = await asUser<{ id: string }>(
+      userA,
+      'select id from storage.objects where name = $1',
+      [`${userB}/avatar`],
+    );
+    expect(revealedAvatar.rows).toHaveLength(1);
+
+    await asUser(userA, "insert into public.match_room_messages (match_id, user_id, body) values ($1, $2, '你好')", [activeMatchId, userA]);
+    const roomMessage = await asUser<{ body: string }>(
+      userB,
+      'select body from public.match_room_messages where match_id = $1',
+      [activeMatchId],
+    );
+    expect(roomMessage.rows[0].body).toBe('你好');
 
     const ownAgeStatus = await asUser<{ status: string }>(
       userA,

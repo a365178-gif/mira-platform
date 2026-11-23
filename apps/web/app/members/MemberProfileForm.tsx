@@ -10,6 +10,8 @@ export interface MemberProfileInitial {
   email: string;
   nickname: string;
   bio: string;
+  interests: string[];
+  routine: string;
   gender: string;
   interestedIn: string;
   intention: string;
@@ -21,6 +23,8 @@ export interface MemberProfileInitial {
 export function MemberProfileForm({ initial }: { initial: MemberProfileInitial }) {
   const [nickname, setNickname] = useState(initial.nickname);
   const [bio, setBio] = useState(initial.bio);
+  const [interests, setInterests] = useState(initial.interests.join('、'));
+  const [routine, setRoutine] = useState(initial.routine);
   const [gender, setGender] = useState(initial.gender);
   const [interestedIn, setInterestedIn] = useState(initial.interestedIn);
   const [intention, setIntention] = useState(initial.intention);
@@ -37,6 +41,9 @@ export function MemberProfileForm({ initial }: { initial: MemberProfileInitial }
       setError('暱稱請輸入 2 至 20 個字。');
       return;
     }
+    const interestList = [...new Set(interests.split(/[、,，]/).map((item) => item.trim()).filter(Boolean))];
+    if (interestList.length > 10) { setError('興趣標籤最多 10 個。'); return; }
+    if (routine.trim().length > 240) { setError('生活作息說明不可超過 240 個字。'); return; }
     const supabase = createSupabaseBrowserClient();
     if (!supabase) { setError('Supabase 尚未設定，資料沒有送出。'); return; }
 
@@ -44,6 +51,8 @@ export function MemberProfileForm({ initial }: { initial: MemberProfileInitial }
     const profileResult = await supabase.from('profiles').update({
       display_name: nickname.trim(),
       bio: bio.trim() || null,
+      interests: interestList,
+      routine: routine.trim() || null,
     }).eq('id', initial.userId);
     if (profileResult.error) {
       setBusy(false);
@@ -99,7 +108,7 @@ export function MemberProfileForm({ initial }: { initial: MemberProfileInitial }
     setBusy(false);
     if (signedUrlError) { setError('頭像已上傳，但目前無法顯示預覽。'); return; }
     setAvatarUrl(signedAvatar.signedUrl);
-    setMessage('頭像已存入私人儲存空間，只有你可以讀取。');
+    setMessage('頭像已存入私人儲存空間；完成共鳴階段三後，配對對象即可查看。');
   }
 
   async function signOut() {
@@ -140,9 +149,19 @@ export function MemberProfileForm({ initial }: { initial: MemberProfileInitial }
         <div className={styles.field}>
           <label className={styles.label} htmlFor="member-bio">個人介紹</label>
           <textarea className={styles.textarea} disabled={busy} id="member-bio" maxLength={500} onChange={(event) => setBio(event.target.value)} rows={4} value={bio} />
-          <p className={styles.help}>{bio.length}/500</p>
+          <p className={styles.help}>{bio.length}/500 · 完成共鳴階段二後，才會揭露給配對對象。</p>
         </div>
-        <h2 className={styles.sectionTitle}>交友資料</h2>
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor="member-interests">興趣標籤</label>
+        <input className={styles.input} disabled={busy} id="member-interests" maxLength={240} onChange={(event) => setInterests(event.target.value)} placeholder="例如：登山、咖啡、底片攝影" value={interests} />
+        <p className={styles.help}>請用頓號或逗號分隔，最多 10 項；完成共鳴階段一後會揭露給配對對象。</p>
+      </div>
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor="member-routine">生活作息</label>
+        <input className={styles.input} disabled={busy} id="member-routine" maxLength={240} onChange={(event) => setRoutine(event.target.value)} placeholder="例如：平日早起，週末喜歡慢慢吃早餐" value={routine} />
+        <p className={styles.help}>完成共鳴階段一後會揭露給配對對象。</p>
+      </div>
+      <h2 className={styles.sectionTitle}>交友資料</h2>
         <div className={styles.fieldGrid}>
           <div className={styles.field}>
             <label className={styles.label} htmlFor="member-gender">性別（私人設定）</label>

@@ -25,7 +25,7 @@ export default async function MemberProfilePage() {
   if (!user) redirect('/login');
 
   const [profileResult, detailsResult, accessResult] = await Promise.all([
-    supabase.from('profiles').select('id, display_name, bio, avatar_storage_path').eq('id', user.id).maybeSingle(),
+    supabase.rpc('get_current_member_profile'),
     supabase.from('member_private_details').select('gender, interested_in, intention').eq('user_id', user.id).maybeSingle(),
     supabase.rpc('current_user_can_explore'),
   ]);
@@ -40,21 +40,30 @@ export default async function MemberProfilePage() {
   }
 
   let avatarUrl: string | null = null;
-  if (profileResult.data.avatar_storage_path) {
+  const profile = profileResult.data as {
+    displayName: string | null;
+    bio: string | null;
+    interests: string[];
+    routine: string | null;
+    avatarStoragePath: string | null;
+  };
+  if (profile.avatarStoragePath) {
     const { data } = await supabase.storage.from('member-avatars')
-      .createSignedUrl(profileResult.data.avatar_storage_path, 300);
+      .createSignedUrl(profile.avatarStoragePath, 300);
     avatarUrl = data?.signedUrl ?? null;
   }
 
   const initial: MemberProfileInitial = {
     userId: user.id,
     email: user.email ?? '',
-    nickname: profileResult.data.display_name ?? '',
-    bio: profileResult.data.bio ?? '',
+    nickname: profile.displayName ?? '',
+    bio: profile.bio ?? '',
+    interests: profile.interests ?? [],
+    routine: profile.routine ?? '',
     gender: detailsResult.data.gender ?? '',
     interestedIn: detailsResult.data.interested_in ?? '',
     intention: detailsResult.data.intention ?? '',
-    avatarPath: profileResult.data.avatar_storage_path,
+    avatarPath: profile.avatarStoragePath,
     avatarUrl,
     canExplore: accessResult.data === true,
   };

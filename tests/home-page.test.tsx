@@ -10,16 +10,17 @@ import { HomePage } from '../apps/web/app/HomePage';
 afterEach(cleanup);
 
 describe('MIRA public home page', () => {
-  it('introduces recommendation, free exploration, and all three stages', () => {
+  it('introduces recommendation and the connected exploration flow', () => {
     render(<HomePage />);
 
     expect(screen.getByRole('heading', { name: '在茫茫人海，遇見剛好的你。' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: '每日精選推薦' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: '自由探索' })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: '氣場初探' })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: '聲音破冰' })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: '真實相遇' })).toBeTruthy();
-    expect(screen.getByText(/會員與正式配對服務尚未開放/)).toBeTruthy();
+    expect(screen.getByRole('heading', { name: '探索會員' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: '有興趣或略過' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: '配對成功' })).toBeTruthy();
+    expect(screen.getAllByText(/探索與雙向配對已接通/).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('link', { name: '開始探索' }).every((link) => link.getAttribute('href') === '/explore')).toBe(true);
   });
 
   it('provides signup and login navigation', () => {

@@ -179,7 +179,8 @@
 .cardEyebrow { margin: 24px 0 8px; color: var(--mira-text-secondary); font-size: 10px; }
 .featureCard h2 { margin: 0; font-size: 24px; font-weight: 580; letter-spacing: -.025em; }
 .featureCard > p:not(.cardEyebrow) { max-width: 440px; margin: 12px 0 20px; color: var(--mira-text-secondary); font-size: 14px; line-height: 1.8; }
-.comingSoon { color: var(--mira-star-purple); font-size: 11px; letter-spacing: .04em; }
+.comingSoon { color: var(--mira-star-purple); font-size: 11px; letter-spacing: .04em; text-decoration: none; text-underline-offset: 3px; }
+.comingSoon:hover { text-decoration: underline; }
 
 .stepsSection {
   width: min(100%, 1100px);

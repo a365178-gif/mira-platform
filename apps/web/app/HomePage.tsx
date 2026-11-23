@@ -28,10 +28,10 @@ export function HomePage() {
             不急著滑過彼此。從生活的頻率開始，慢慢看見一個人的真實與溫度。
           </p>
           <div className={styles.heroActions}>
-            <a className={styles.primaryButton} href="/onboarding">開始探索 <span aria-hidden="true">↗</span></a>
+            <a className={styles.primaryButton} href="/explore">開始探索 <span aria-hidden="true">↗</span></a>
             <a className={styles.textLink} href="#steps">認識三階探索 <span aria-hidden="true">↓</span></a>
           </div>
-          <p className={styles.availability}>MIRA 正在準備中 · 會員與正式配對服務尚未開放</p>
+          <p className={styles.availability}>探索與雙向配對已接通 · 須完成成年驗證並啟用帳號</p>
         </div>
         <div className={styles.heroArt} aria-label="交錯星軌與星光的裝飾圖像" role="img">
           <div className={`${styles.orbit} ${styles.orbitOne}`} />
@@ -57,8 +57,8 @@ export function HomePage() {
           <div className={`${styles.featureIcon} ${styles.exploreIcon}`} aria-hidden="true">⌕</div>
           <p className={styles.cardEyebrow}>Find your own rhythm</p>
           <h2>自由探索</h2>
-          <p>依照自己的心情與期待，從價值觀、興趣和生活片段出發，發現值得多聊幾句的可能。</p>
-          <span className={styles.comingSoon}>真實對象探索尚未開放</span>
+          <p>瀏覽符合成年驗證與啟用條件的會員，表達有興趣或略過；雙方都選擇有興趣時建立配對。</p>
+          <a className={styles.comingSoon} href="/explore">登入後開始探索</a>
         </article>
       </section>
 
@@ -72,28 +72,28 @@ export function HomePage() {
           <li className={styles.stepCard}>
             <span className={styles.stepNumber}>01</span>
             <span className={styles.stepLine} aria-hidden="true" />
-            <p className={styles.stepLabel}>第一階 · 感受頻率</p>
-            <h3>氣場初探</h3>
-            <p>先從價值觀與生活節奏認識彼此，在還不急著看見全部之前，感受想法是否靠近。</p>
+            <p className={styles.stepLabel}>第一階 · 發現對象</p>
+            <h3>探索會員</h3>
+            <p>瀏覽已完成成年驗證並啟用探索的會員，認識對方的自我介紹與興趣。</p>
           </li>
           <li className={styles.stepCard}>
             <span className={styles.stepNumber}>02</span>
             <span className={styles.stepLine} aria-hidden="true" />
-            <p className={styles.stepLabel}>第二階 · 分享日常</p>
-            <h3>聲音破冰</h3>
-            <p>交換興趣、生活片段與真誠的回答，讓一段對話從輕鬆自在的分享開始。</p>
+            <p className={styles.stepLabel}>第二階 · 表達意願</p>
+            <h3>有興趣或略過</h3>
+            <p>每位會員各自送出回覆；略過的對象不會再次出現在探索清單。</p>
           </li>
           <li className={styles.stepCard}>
             <span className={styles.stepNumber}>03</span>
             <span className={styles.stepLine} aria-hidden="true" />
-            <p className={styles.stepLabel}>第三階 · 雙向選擇</p>
-            <h3>真實相遇</h3>
-            <p>當雙方都願意繼續認識，才進一步開啟完整介紹與對話。彼此的意願都很重要。</p>
+            <p className={styles.stepLabel}>第三階 · 雙向配對</p>
+            <h3>配對成功</h3>
+            <p>只有雙方都選擇有興趣時，資料庫才會建立配對紀錄。訊息功能尚未上線。</p>
           </li>
         </ol>
         <p className={styles.demoNote}>
-          以上為 MIRA 正式服務的設計理念。會員驗證、真實推薦、雙向配對與訊息功能尚未上線。
-          <a href="/onboarding">前往本機示範了解流程</a>
+          探索與雙向配對已接通 Supabase；須完成成年驗證並啟用帳號。推薦與訊息功能尚未上線。
+          <a href="/sign-up">建立會員帳號</a>
         </p>
       </section>
 
@@ -101,8 +101,8 @@ export function HomePage() {
         <p className={styles.eyebrow}>MIRA｜覓然</p>
         <h2 id="closing-title">讓相遇，回到剛好的步調。</h2>
         <p>一段相遇，從自在探索開始。</p>
-        <a className={styles.primaryButton} href="/onboarding">開始本機示範 <span aria-hidden="true">↗</span></a>
-        <small>這是非正式示範，不會建立帳號或配對真實使用者。</small>
+        <a className={styles.primaryButton} href="/explore">開始探索 <span aria-hidden="true">↗</span></a>
+        <small>須登入並完成有效成年驗證，且會員資料已啟用。</small>
       </section>
 
       <footer className={styles.footer}>
